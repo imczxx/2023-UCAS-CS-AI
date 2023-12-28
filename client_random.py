@@ -2,7 +2,7 @@ import sys
 import json
 import struct
 import socket
-from agent import Agent
+import random
 
 server_ip = "127.0.0.1"                 # 德州扑克平台地址
 server_port = 2333                      # 德州扑克平台开放端口
@@ -10,10 +10,21 @@ room_number = int(sys.argv[1])          # 一局游戏人数
 name = sys.argv[2]                      # 当前程序的 AI 名字
 game_number = int(sys.argv[3])          # 最大对局数量
 
+
+def get_action(data):
+    print(data)
+    legal_actions = data['legal_actions']
+    action = random.choice(legal_actions)
+    if(action == 'raise'):
+        action = 'r' + str(random.randint(data['raise_range'][0], data['raise_range'][1]))
+    return action
+
+
 def sendJson(request, jsonData):
     data = json.dumps(jsonData).encode()
     request.send(struct.pack('i', len(data)))
     request.sendall(data)
+
 
 def recvJson(request):
     data = request.recv(4)
@@ -24,6 +35,7 @@ def recvJson(request):
     data = json.loads(data)
     return data
 
+
 if __name__ == "__main__":
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.connect((server_ip, server_port))
@@ -32,14 +44,12 @@ if __name__ == "__main__":
                    room_number=room_number,
                    game_number=game_number)
     sendJson(client, message)
-    agent = Agent()
     while True:
         data = recvJson(client)
-        position = data['position']
         if data['info'] == 'state':
             if data['position'] == data['action_position']:
-                agent.inform(data)
-                action = agent.act(data)
+                position = data['position']
+                action = get_action(data)
                 sendJson(client, {'action': action, 'info': 'action'})
         elif data['info'] == 'result':
             print('win money: {},\tyour card: {},\topp card: {},\t\tpublic card: {}'.format(
