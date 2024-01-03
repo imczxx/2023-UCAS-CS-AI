@@ -3,6 +3,7 @@ import json
 import struct
 import socket
 from poker_agent import PokerAgent
+import cProfile
 
 server_ip = "127.0.0.1"                 # 德州扑克平台地址
 server_port = 2333                      # 德州扑克平台开放端口
@@ -24,7 +25,7 @@ def recvJson(request):
     data = json.loads(data)
     return data
 
-if __name__ == "__main__":
+def main():
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.connect((server_ip, server_port))
     message = dict(info='connect',
@@ -47,8 +48,10 @@ if __name__ == "__main__":
             print('win money: {},\tyour card: {},\topp card: {},\t\tpublic card: {}'.format(
                 data['players'][position]['win_money'], data['player_card'][position],
                 data['player_card'][1 - position], data['public_card']))
-            sendJson(client, {'info': 'ready', 'status': 'start'})
+            # sendJson(client, {'info': 'ready', 'status': 'start'})
         else:
             print(data)
             break
     client.close()
+
+cProfile.run('main()')

@@ -21,11 +21,11 @@ class DQNAgent:
         self.q_net = DQNNet(state_size, action_size).to(device)
         self.target_net = DQNNet(state_size, action_size).to(device)
         self.target_net.load_state_dict(self.q_net.state_dict())
-        self.optimizer = optim.Adam(self.q_net.parameters(), lr=0.01)
-        self.gamma = 0.95
+        self.optimizer = optim.Adam(self.q_net.parameters(), lr=0.001)
+        self.gamma = 0.99
         self.epsilon = 0.2
-        self.replay_size = 250
-        self.replay_batchsize = 50
+        self.replay_size = 100
+        self.replay_batchsize = 10
         self.iteration_per_train = 5
         self.replay = ReplayBuffer(self.replay_size)
 
@@ -33,17 +33,23 @@ class DQNAgent:
         action_mask = np.array(action_mask)
         if random.random() < self.epsilon:
             action = random.choice(np.where(action_mask==1)[0])
-            bet = np.random.randint(0, 1000)
+            bet = np.random.randint(0, 100)
         else:
             state = torch.tensor(state).unsqueeze(0).to(device)
             state = state.float()
-            q_value, bet = self.q_net.forward(state)
+            # q_value, bet = self.q_net.forward(state)
+            # q_value = q_value.squeeze().detach().cpu().numpy()
+            # legal_q_values = [q_value[i] for i in np.where(action_mask==1)[0]]
+            # max_q_value = np.max(legal_q_values)
+            # max_q_indices = [i for i, q in enumerate(legal_q_values) if q == max_q_value]
+            # action = random.choice(max_q_indices)
+            q_value = self.q_net.forward(state)
             q_value = q_value.squeeze().detach().cpu().numpy()
             legal_q_values = [q_value[i] for i in np.where(action_mask==1)[0]]
             max_q_value = np.max(legal_q_values)
             max_q_indices = [i for i, q in enumerate(legal_q_values) if q == max_q_value]
             action = random.choice(max_q_indices)
-        return action, bet
+        return action, 100
 
     def feed(self, transition):
         (state, action, reward, next_state) = transition
@@ -58,21 +64,46 @@ class DQNAgent:
     
     def train(self): # to modify
         for i in range(self.iteration_per_train):
+            # state_batch, action_batch, reward_batch, next_state_batch = self.replay.sample(self.replay_batchsize)
+
+            # state_batch = torch.tensor(state_batch).to(device)
+            # action_batch = torch.tensor(action_batch).to(device)
+            # bet_batch = action_batch[:, 4].unsqueeze(1)
+            # action_batch = action_batch[:, :4]
+            # reward_batch = torch.tensor(reward_batch).to(device)
+            # next_state_batch = torch.tensor(next_state_batch).to(device)
+
+            # q_values, bet = self.q_net.forward(state_batch)
+            # action_batch = torch.tensor(action_batch, dtype=torch.int64).to(device)
+            # action_batch = action_batch.argmax(dim=1)
+            # q_values = q_values.gather(1, action_batch.unsqueeze(1))
+
+            # next_q_values, _ = self.target_net(next_state_batch)
+            # next_q_values.squeeze(0)
+            # next_q_values = next_q_values.max(1)[0].detach()
+
+            # reward_batch.squeeze(0).squeeze(0)
+            # target_q_values = reward_batch + self.gamma * next_q_values
+
+            # loss = nn.MSELoss()(q_values, target_q_values)
+            # for i in range(self.replay_batchsize):
+            #     if bet_batch[i] != 0:
+            #         loss += nn.MSELoss()(bet[i], bet_batch[i])
+            
             state_batch, action_batch, reward_batch, next_state_batch = self.replay.sample(self.replay_batchsize)
 
             state_batch = torch.tensor(state_batch).to(device)
             action_batch = torch.tensor(action_batch).to(device)
-            bet_batch = action_batch[:, 4].unsqueeze(1)
             action_batch = action_batch[:, :4]
             reward_batch = torch.tensor(reward_batch).to(device)
             next_state_batch = torch.tensor(next_state_batch).to(device)
 
-            q_values, bet = self.q_net.forward(state_batch)
+            q_values = self.q_net.forward(state_batch)
             action_batch = torch.tensor(action_batch, dtype=torch.int64).to(device)
             action_batch = action_batch.argmax(dim=1)
             q_values = q_values.gather(1, action_batch.unsqueeze(1))
 
-            next_q_values, _ = self.target_net(next_state_batch)
+            next_q_values = self.target_net.forward(next_state_batch)
             next_q_values.squeeze(0)
             next_q_values = next_q_values.max(1)[0].detach()
 
@@ -80,9 +111,6 @@ class DQNAgent:
             target_q_values = reward_batch + self.gamma * next_q_values
 
             loss = nn.MSELoss()(q_values, target_q_values)
-            for i in range(self.replay_batchsize):
-                if bet_batch[i] != 0:
-                    loss += nn.MSELoss()(bet[i], bet_batch[i])
 
             print(f"loss: {loss}")
 
@@ -119,7 +147,8 @@ class DQNNet(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
     def forward(self, state):
-        return self.action_net(state), self.bet_net(state)
+        # return self.action_net(state), self.bet_net(state)
+        return self.action_net(state)
 
 class ReplayBuffer:
     def __init__(self, size):
