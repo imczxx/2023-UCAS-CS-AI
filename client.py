@@ -2,7 +2,7 @@ import sys
 import json
 import struct
 import socket
-from agent import Agent
+from poker_agent import PokerAgent
 
 server_ip = "127.0.0.1"                 # 德州扑克平台地址
 server_port = 2333                      # 德州扑克平台开放端口
@@ -32,16 +32,18 @@ if __name__ == "__main__":
                    room_number=room_number,
                    game_number=game_number)
     sendJson(client, message)
-    agent = Agent()
+    agent = PokerAgent()
+    position = None
     while True:
         data = recvJson(client)
-        position = data['position']
         if data['info'] == 'state':
             if data['position'] == data['action_position']:
+                position = data['position']
                 agent.inform(data)
                 action = agent.act(data)
                 sendJson(client, {'action': action, 'info': 'action'})
         elif data['info'] == 'result':
+            agent.inform(data)
             print('win money: {},\tyour card: {},\topp card: {},\t\tpublic card: {}'.format(
                 data['players'][position]['win_money'], data['player_card'][position],
                 data['player_card'][1 - position], data['public_card']))

@@ -12,7 +12,7 @@ game_number = int(sys.argv[3])          # 最大对局数量
 
 
 def get_action(data):
-    print(data)
+    # print(data)
     legal_actions = data['legal_actions']
     action = random.choice(legal_actions)
     if(action == 'raise'):
@@ -44,6 +44,7 @@ if __name__ == "__main__":
                    room_number=room_number,
                    game_number=game_number)
     sendJson(client, message)
+    position = 1
     while True:
         data = recvJson(client)
         if data['info'] == 'state':
