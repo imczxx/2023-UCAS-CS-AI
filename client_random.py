@@ -17,7 +17,10 @@ def get_action(data):
     legal_actions = data['legal_actions']
     action = random.choice(legal_actions)
     if(action == 'raise'):
-        action = 'r' + str(random.randint(data['raise_range'][0], data['raise_range'][1]))
+        if(random.random() < 0.1):
+            action = 'r' + str(data['raise_range'][1])
+        else:
+            action = 'r' + str(random.randint(data['raise_range'][0], int((data['raise_range'][0]+data['raise_range'][1])/2)))
     return action
 
 

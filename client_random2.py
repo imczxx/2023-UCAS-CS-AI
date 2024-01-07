@@ -2,7 +2,6 @@ import sys
 import json
 import struct
 import socket
-from poker_agent import PokerAgent
 
 server_ip = "127.0.0.1"                 # 德州扑克平台地址
 server_port = 2333                      # 德州扑克平台开放端口
@@ -10,12 +9,21 @@ room_number = int(sys.argv[1])          # 一局游戏人数
 name = sys.argv[2]                      # 当前程序的 AI 名字
 game_number = int(sys.argv[3])          # 最大对局数量
 
-mode = sys.argv[4]                      # 模式，'train' 或 'pk'
+
+def get_action(data):
+    print(data)
+    if 'call' in data['legal_actions']:
+        action = 'call'
+    else:
+        action = 'check'
+    return action
+
 
 def sendJson(request, jsonData):
     data = json.dumps(jsonData).encode()
     request.send(struct.pack('i', len(data)))
     request.sendall(data)
+
 
 def recvJson(request):
     data = request.recv(4)
@@ -26,7 +34,8 @@ def recvJson(request):
     data = json.loads(data)
     return data
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.connect((server_ip, server_port))
     message = dict(info='connect',
@@ -34,18 +43,15 @@ if __name__ == '__main__':
                    room_number=room_number,
                    game_number=game_number)
     sendJson(client, message)
-    agent = PokerAgent(mode)
-    position = None
+    position = 1
     while True:
         data = recvJson(client)
         if data['info'] == 'state':
-            if data['position'] == data['action_position']: # 只有轮到自己行动时才会告知Agent信息并让Agent行动。
+            if data['position'] == data['action_position']:
                 position = data['position']
-                agent.inform(data)
-                action = agent.act(data)
+                action = get_action(data)
                 sendJson(client, {'action': action, 'info': 'action'})
         elif data['info'] == 'result':
-            agent.inform(data)
             print('win money: {},\tyour card: {},\topp card: {},\t\tpublic card: {}'.format(
                 data['players'][position]['win_money'], data['player_card'][position],
                 data['player_card'][1 - position], data['public_card']))
