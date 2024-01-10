@@ -23,8 +23,8 @@ class DQNAgent:
         self.optimizer = optim.Adam(self.deep_q_net.parameters(), lr=0.01)
         self.gamma = 0.95
         self.epsilon = 0.2
-        self.replay_size = 1000
-        self.replay_batchsize = 200
+        self.replay_size = 100
+        self.replay_batchsize = 20
         self.iteration_per_train = 5
         self.param_update_interval = 2
         self.train_cnt = 0
@@ -95,9 +95,9 @@ class DQNAgent:
             q_value_batch = q_value_batch.gather(1, action_batch.unsqueeze(1))
             q_value_batch = q_value_batch.squeeze()
 
-            next_q_value_batch = self.target_net.forward(next_state_batch)
-            next_q_value_batch.squeeze(0)
-            next_q_value_batch = next_q_value_batch.max(1)[0].detach()
+            # 使用在线网络选择动作
+            next_action_batch = self.deep_q_net.forward(next_state_batch).argmax(1, keepdim=True)
+            next_q_value_batch = self.target_net.forward(next_state_batch).gather(1, next_action_batch).squeeze(1).detach()
 
             reward_batch = reward_batch.squeeze()
             target_q_value_batch = reward_batch + self.gamma * next_q_value_batch
