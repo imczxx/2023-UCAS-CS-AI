@@ -61,17 +61,17 @@ if __name__ == "__main__":
                         data["public_card"],
                     )
                 )
-                # 记录过去1000局的平均赢钱数，并绘制为图表
+                # 记录过去500局的平均赢钱数，并绘制为图表
                 win_money = data["players"][position]["win_money"]
                 recent_wins.append(win_money)
-                if len(recent_wins) == 100:
-                    average_win = sum(recent_wins) / 100
+                if len(recent_wins) == 500:
+                    average_win = sum(recent_wins) / 500
                     average_wins.append(average_win)
                     recent_wins = []
                     plt.plot(average_wins)
                     plt.title("Average Win Money")
                     plt.savefig("average_win_money.png")
-                # sendJson(client, {'info': 'ready', 'status': 'start'})
+            sendJson(client, {'info': 'ready', 'status': 'start'})
         else:
             print(data)
             break

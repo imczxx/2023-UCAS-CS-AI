@@ -23,10 +23,10 @@ class DQNAgent:
         self.optimizer = optim.Adam(self.deep_q_net.parameters(), lr=0.01)
         self.gamma = 0.95
         self.epsilon = 0.2
-        self.replay_size = 100
-        self.replay_batchsize = 20
+        self.replay_size = 500
+        self.replay_batchsize = 100
         self.iteration_per_train = 5
-        self.param_update_interval = 2
+        self.param_update_interval = 1
         self.train_cnt = 0
         self.replay_buffer = ReplayBuffer(self.replay_size)
         self.mode = mode
@@ -160,10 +160,10 @@ class DQNNet(nn.Module):
         self._init_weights()
 
     def _init_weights(self):
-        torch.manual_seed(0)
+        torch.manual_seed(2024)
         for m in self.modules():
             if isinstance(m, nn.Linear):
-                nn.init.xavier_uniform_(m.weight)
+                nn.init.constant_(m.weight, 0)
                 nn.init.constant_(m.bias, 0)
 
     def forward(self, state):
